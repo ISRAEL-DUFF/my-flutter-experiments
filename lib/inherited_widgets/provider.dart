@@ -122,7 +122,7 @@ class MultiListenableBuilder extends StatelessWidget with TypeCheck {
     // TODO: check case listeners.len == 0
     if (i < listeners!.length - 1) {
       return ValueListenableBuilder<int>(
-          valueListenable: (listeners![i].listener as TDataNotifier).v,
+          valueListenable: listeners![i].listener!.v,
           child: _buildTree(i: i + 1),
           builder: (context, v, child) {
             // return builder!(context, child);
@@ -130,7 +130,8 @@ class MultiListenableBuilder extends StatelessWidget with TypeCheck {
           });
     } else {
       return ValueListenableBuilder<int>(
-          valueListenable: (listeners![i].listener as TDataNotifier).v,
+          // valueListenable: (listeners![i].listener as TDataNotifier).v,
+          valueListenable: listeners![i].listener!.v,
           child: child,
           builder: (context, v, child) {
             return builder!(context, child);
