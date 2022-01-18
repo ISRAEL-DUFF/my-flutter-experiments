@@ -25,10 +25,10 @@ class MyApp extends StatelessWidget {
 
     return TMultiprovider(
         providers: [
-          TProviderStateWrapper<int>(data: 5),
-          TProviderStateWrapper<MyData1>(data: MyData1()),
-          TProviderStateWrapper<MyData2>(data: MyData2()),
-          TProviderStateWrapper<String>(data: 'Heelo Wrold')
+          TProvider<int>(data: 5),
+          TProvider<MyData1>(data: MyData1()),
+          TProvider<MyData2>(data: MyData2()),
+          TProvider<String>(data: 'Heelo Wrold')
         ],
         child: MaterialApp(
           title: 'Trouter',
@@ -62,7 +62,7 @@ class MyHomePage extends StatelessWidget {
               child: Text('Update value')),
           // PlayState(),
 
-          MyListenableBuilder<MyData1>(
+          TListenableBuilder<MyData1>(
               listener: data1.data,
               builder: (context, data, _) {
                 return Container(
@@ -79,7 +79,7 @@ class MyHomePage extends StatelessWidget {
                 ));
               }),
 
-          MyListenableBuilder<MyData2>(
+          TListenableBuilder<MyData2>(
               listener: data2.data,
               builder: (context, data, _) {
                 return Container(
@@ -97,7 +97,7 @@ class MyHomePage extends StatelessWidget {
               }),
 
           // Multiple listeners
-          MultiListenableBuilder(
+          TMultiListenableBuilder(
               listeners: [
                 TListenable<MyData1>(
                   listener: data1.data,
@@ -167,7 +167,7 @@ class PlayStateS extends State<PlayState> {
     //     });
 
     return Column(children: [
-      MyListenableBuilder<MyData1>(
+      TListenableBuilder<MyData1>(
           listener: MyData1(),
           builder: (context, data, _) {
             return Container(
