@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import './cashly/theme.dart';
 import './cashly/buttons.dart';
 import './inherited_widgets/provider.dart';
+import './model.dart';
 import 'dart:math';
+
+import './pages/page_one.dart';
+import './pages/single_listener.dart';
+import './pages/multi_listener.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,15 +19,6 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    // return TProviderStateWrapper<int>(
-    //     data: 6,
-    //     child: MaterialApp(
-    //       title: 'Trouter',
-    //       color: CashlyThemeData.accentColor.withOpacity(1),
-    //       theme: CashlyThemeData.themeData(),
-    //       home: MyHomePage(),
-    //     ));
-
     return TMultiprovider(
         providers: [
           TProvider<int>(data: 5),
@@ -45,144 +41,28 @@ class MyHomePage extends StatelessWidget {
     var stat = TProvider.of<int>(context)!;
     var data1 = TProvider.of<MyData1>(context)!;
     var data2 = TProvider.of<MyData2>(context)!;
-    int d = stat.data;
+    int d = stat;
     return Scaffold(
       // appBar: AppBar(title: Text('Cashly App')),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Center(child: Text('Testing Inhrited widget: ${data2.data.c}')),
+          Center(child: Text('Testing Inhrited widget: ${data2.c}')),
           Center(child: Text(d.toString())),
           ElevatedButton(
               onPressed: () {
                 int a = Random().nextInt(500);
                 // stat.updateData(a);
-                data1.data.updateA(a);
+                data1.updateA(a);
               },
               child: Text('Update value')),
           // PlayState(),
 
-          TListenableBuilder<MyData1>(
-              listener: data1.data,
-              builder: (context, data, _) {
-                return Container(
-                    child: Row(
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          int a = Random().nextInt(500);
-                          data.updateA(a);
-                        },
-                        child: Text('Update 2')),
-                    Text('Data 2: ${data.a}'),
-                  ],
-                ));
-              }),
-
-          TListenableBuilder<MyData2>(
-              listener: data2.data,
-              builder: (context, data, _) {
-                return Container(
-                    child: Row(
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          int a = Random().nextInt(500);
-                          data.updateName('String: ' + a.toString());
-                        },
-                        child: Text('Update 3')),
-                    Text('Data 3: ${data.c}'),
-                  ],
-                ));
-              }),
-
-          // Multiple listeners
-          TMultiListenableBuilder(
-              listeners: [
-                TListenable<MyData1>(
-                  listener: data1.data,
-                ),
-                TListenable<MyData2>(
-                  listener: data2.data,
-                ),
-              ],
-              builder: (context, _) {
-                return Center(
-                  child: Column(
-                    children: [
-                      Text('Multiple builder ready'),
-                      Container(
-                          child: Row(
-                        children: [
-                          ElevatedButton(
-                              onPressed: () {
-                                int a = Random().nextInt(500);
-                                data1.data.updateA(a);
-                              },
-                              child: Text('Update Multiple 1')),
-                          Text('Data 5: ${data1.data.a}'),
-                        ],
-                      )),
-                      Container(
-                          child: Row(
-                        children: [
-                          ElevatedButton(
-                              onPressed: () {
-                                int a = Random().nextInt(500);
-                                data2.data
-                                    .updateName('String: ' + a.toString());
-                              },
-                              child: Text('Update Multiple')),
-                          Text('Data 4: ${data2.data.c}'),
-                        ],
-                      )),
-                    ],
-                  ),
-                );
-              })
+          DemoMultiListener(),
+          PlayState(),
+          DemoSingleListener()
         ],
       ),
     );
-  }
-}
-
-class PlayState extends StatefulWidget {
-  Widget? child;
-  PlayState({
-    Key? key,
-  }) : super(key: key);
-  @override
-  PlayStateS createState() => PlayStateS();
-}
-
-class PlayStateS extends State<PlayState> {
-  // TSubscribe ss = TSubscribe();
-  // MyData dd = MyData();
-  @override
-  Widget build(BuildContext context) {
-    // return ValueListenableBuilder<int>(
-    //     valueListenable: dd.v,
-    //     builder: (context, v, child) {
-    //       return child!;
-    //     });
-
-    return Column(children: [
-      TListenableBuilder<MyData1>(
-          listener: MyData1(),
-          builder: (context, data, _) {
-            return Container(
-                child: Row(
-              children: [
-                ElevatedButton(
-                    onPressed: () {
-                      int a = Random().nextInt(500);
-                      data.updateA(a);
-                    },
-                    child: Text('Update 2')),
-                Text('Data 1: ${data.a}'),
-              ],
-            ));
-          })
-    ]);
   }
 }

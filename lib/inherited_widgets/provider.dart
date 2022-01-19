@@ -10,10 +10,14 @@ class TProvider<T> extends StatefulWidget {
   @override
   TProviderState createState() => TProviderState<T>(data: data);
 
-  static TProviderState? of<P>(BuildContext context) {
+  static TProviderState? fo<P>(BuildContext context) {
     return context
         .dependOnInheritedWidgetOfExactType<TInheritedWidget<P>>()!
         .state;
+  }
+
+  static P? of<P>(BuildContext context) {
+    return fo<P>(context)!.data;
   }
 }
 
@@ -71,52 +75,61 @@ class TMultiprovider extends StatelessWidget {
 
 class TDataNotifier extends ValueNotifier<int> {
   TDataNotifier() : super(Random().nextInt(500));
-  updateState() {
-    value = Random().nextInt(500);
+
+  @override
+  notifyListeners() {
+    // TODO: custom logic here
+
+    // well, still thinking of what / how to update this 'value'
+    // value = Random().nextInt(500);
+
+    // finally call notifyListeners from Super class ValueNotifier
+    super.notifyListeners();
   }
 }
 
 class TListenableBuilder<T extends TDataNotifier> extends StatelessWidget {
   final Widget Function(BuildContext, T, Widget?) builder;
   Widget? child;
-  T listener;
+  T value;
   TListenableBuilder(
-      {Key? key, required this.listener, required this.builder, this.child})
+      {Key? key, required this.value, required this.builder, this.child})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
-        valueListenable: listener,
+        valueListenable: value,
         child: child,
         builder: (context, v, child) {
-          return builder(context, listener, child);
+          return builder(context, value, child);
         });
   }
 }
 
 // MULTIPLE Listenable
-class TListenable<T extends TDataNotifier> {
+class TListenable<T> with TypeCheck {
   T listener;
   TListenable({required this.listener}) {
-    // assert(isSubtype<T, TDataNotifier>());
+    assert(isSubtype<T, TDataNotifier>());
   }
 }
 
 class TMultiListenableBuilder extends StatefulWidget {
-  final Widget Function(BuildContext, Widget?) builder;
+  final Widget Function(
+      BuildContext, T? Function<T extends TDataNotifier>(), Widget?) builder;
   final Widget? child;
-  final List<TListenable> listeners;
+  final List<TListenable> values;
   const TMultiListenableBuilder(
-      {Key? key, required this.listeners, required this.builder, this.child})
+      {Key? key, required this.values, required this.builder, this.child})
       : super(key: key);
   @override
   TMultiListenableBuilderState createState() => TMultiListenableBuilderState();
 
-  TListenable? find<T>() {
-    for (TListenable l in listeners) {
+  T? find<T extends TDataNotifier>() {
+    for (TListenable l in values) {
       if (l.listener is T) {
-        return l;
+        return l.listener;
       }
     }
   }
@@ -129,7 +142,7 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     super.initState();
 
     // listen for individual changes in listeners
-    for (TListenable l in widget.listeners) {
+    for (TListenable l in widget.values) {
       l.listener.addListener(listenForUpdate);
     }
   }
@@ -138,7 +151,7 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   void dispose() {
     // TODO: implement dispose
     super.dispose();
-    for (TListenable l in widget.listeners) {
+    for (TListenable l in widget.values) {
       l.listener.removeListener(listenForUpdate);
     }
   }
@@ -149,13 +162,13 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   }
 
   Widget _buildTree({int i = 0}) {
-    if (i < widget.listeners.length - 1) {
+    if (i < widget.values.length - 1) {
       return Builder(builder: (context) {
         return _buildTree(i: i + 1);
       });
     } else {
       return Builder(builder: (context) {
-        return widget.builder(context, widget.child);
+        return widget.builder(context, widget.find, widget.child);
       });
     }
   }
@@ -164,26 +177,5 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     setState(() {
       print('Update received and state updateded');
     });
-  }
-}
-
-class MyData1 extends TDataNotifier {
-  int a = 1;
-  int b = 2;
-  String c = 'C';
-
-  updateA(int newA) {
-    a = newA;
-    updateState();
-  }
-}
-
-class MyData2 extends TDataNotifier {
-  int nuum = 1;
-  String c = 'C';
-
-  updateName(String name) {
-    c = name;
-    updateState();
   }
 }
