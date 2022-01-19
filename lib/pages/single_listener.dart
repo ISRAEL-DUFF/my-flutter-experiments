@@ -16,6 +16,8 @@ class DemoSingleListener extends StatelessWidget {
         TListenableBuilder<MyData1>(
             value: data1,
             builder: (context, data, _) {
+              print('REBUILDING singl 1');
+
               return Container(
                   child: Row(
                 children: [
@@ -32,6 +34,8 @@ class DemoSingleListener extends StatelessWidget {
         TListenableBuilder<MyData2>(
             value: data2,
             builder: (context, data, _) {
+              print('REBUILDING single 2');
+
               return Container(
                   child: Row(
                 children: [

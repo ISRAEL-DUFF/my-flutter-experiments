@@ -52,8 +52,8 @@ class TInheritedWidget<T> extends InheritedWidget {
 
 class TMultiprovider extends StatelessWidget {
   final Widget? child;
-  final List<TProvider>? providers;
-  const TMultiprovider({Key? key, this.child, @required this.providers})
+  final List<TProvider> providers;
+  const TMultiprovider({Key? key, this.child, required this.providers})
       : super(key: key);
 
   @override
@@ -62,13 +62,13 @@ class TMultiprovider extends StatelessWidget {
   }
 
   TProvider _buildTree({int i = 0}) {
-    // TODO: check case providers.len == 0
-    if (i < providers!.length - 1) {
-      providers![i].child = _buildTree(i: i + 1);
-      return providers![i];
+    if (providers.isEmpty) return TProvider();
+    if (i < providers.length - 1) {
+      providers[i].child = _buildTree(i: i + 1);
+      return providers[i];
     } else {
-      providers![i].child = child!;
-      return providers![i];
+      providers[i].child = child!;
+      return providers[i];
     }
   }
 }
@@ -109,9 +109,20 @@ class TListenableBuilder<T extends TDataNotifier> extends StatelessWidget {
 
 // MULTIPLE Listenable
 class TListenable<T> with TypeCheck {
-  T listener;
-  TListenable({required this.listener}) {
-    assert(isSubtype<T, TDataNotifier>());
+  T? value;
+  TListenable({this.value}) {
+    if (!isSubtype<T, TDataNotifier>()) {
+      throw ('Type ${T} must be a subtype of ${TDataNotifier}');
+    }
+  }
+
+  bool valueFromProvider(BuildContext context) {
+    value = TProvider.of<T>(context);
+    if (value == null) {
+      return false;
+    } else {
+      return true;
+    }
   }
 }
 
@@ -128,8 +139,8 @@ class TMultiListenableBuilder extends StatefulWidget {
 
   T? find<T extends TDataNotifier>() {
     for (TListenable l in values) {
-      if (l.listener is T) {
-        return l.listener;
+      if (l.value is T) {
+        return l.value;
       }
     }
   }
@@ -137,28 +148,46 @@ class TMultiListenableBuilder extends StatefulWidget {
 
 class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     with TypeCheck {
+  bool initialized = false;
   @override
   void initState() {
     super.initState();
-
-    // listen for individual changes in listeners
-    for (TListenable l in widget.values) {
-      l.listener.addListener(listenForUpdate);
-    }
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
     for (TListenable l in widget.values) {
-      l.listener.removeListener(listenForUpdate);
+      l.value.removeListener(listenForUpdate);
     }
+  }
+
+  initListeners() {
+    // listen for individual changes in listeners
+    for (TListenable l in widget.values) {
+      if (l.value == null) {
+        if (!l.valueFromProvider(context)) {
+          throw ('No Provider value found for ${l.runtimeType}');
+        }
+      }
+      l.value.addListener(listenForUpdate);
+    }
+
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      setState(() {
+        initialized = true;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return _buildTree();
+    if (initialized) {
+      return _buildTree();
+    } else {
+      initListeners();
+      return Container();
+    }
   }
 
   Widget _buildTree({int i = 0}) {
@@ -174,8 +203,6 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   }
 
   listenForUpdate() {
-    setState(() {
-      print('Update received and state updateded');
-    });
+    setState(() {});
   }
 }

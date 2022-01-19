@@ -15,6 +15,7 @@ class PlayState extends StatefulWidget {
 class PlayStateS extends State<PlayState> {
   @override
   Widget build(BuildContext context) {
+    print('REBUILDING PLAYSTATE');
     return Column(children: [
       TListenableBuilder<MyData1>(
           value: MyData1(),

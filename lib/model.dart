@@ -22,3 +22,25 @@ class MyData2 extends TDataNotifier {
     notifyListeners();
   }
 }
+
+class SomeModel {
+  int id = 1;
+  String label = 'C';
+}
+
+class AccountInfo extends TDataNotifier {
+  int staffId = 0;
+  String accountNum = 'ACCT';
+  String accountName = '';
+  int balance = 200;
+
+  setName(String name) {
+    accountName = name;
+    // notifyListeners();
+  }
+
+  setAccount(String n) {
+    accountNum = n;
+    notifyListeners();
+  }
+}

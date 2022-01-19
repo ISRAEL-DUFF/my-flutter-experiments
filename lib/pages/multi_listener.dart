@@ -6,20 +6,25 @@ import 'dart:math';
 class DemoMultiListener extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var data1 = TProvider.of<MyData1>(context)!;
-    var data2 = TProvider.of<MyData2>(context)!;
+    // var data1 = TProvider.of<MyData1>(context)!;
+    // var data2 = TProvider.of<MyData2>(context)!;
 
     // Multiple listeners
     return TMultiListenableBuilder(
         values: [
-          TListenable<MyData1>(
-            listener: data1,
+          TListenable<MyData1>(), // i.e value = TProvider.of<MyData1>(context)
+          TListenable<MyData2>(), // same as above
+          TListenable<AccountInfo>(
+            value: AccountInfo(),
           ),
-          TListenable<MyData2>(
-            listener: data2,
+          TListenable<SomeModel>(
+            value: SomeModel(),
           ),
         ],
         builder: (context, find, _) {
+          MyData1? l1 = find<MyData1>();
+          MyData2? d2 = find<MyData2>()!;
+          AccountInfo accountInfo = find<AccountInfo>()!;
           return Center(
             child: Column(
               children: [
@@ -31,11 +36,10 @@ class DemoMultiListener extends StatelessWidget {
                         onPressed: () {
                           int a = Random().nextInt(500);
                           // data1.data.updateA(a);
-                          MyData1? l = find<MyData1>();
-                          l!.updateA(a);
+                          l1!.updateA(a);
                         },
                         child: Text('Update Multiple 1')),
-                    Text('Data 5: ${data1.a}'),
+                    Text('Data 5: ${l1!.a}'),
                   ],
                 )),
                 Container(
@@ -44,10 +48,27 @@ class DemoMultiListener extends StatelessWidget {
                     ElevatedButton(
                         onPressed: () {
                           int a = Random().nextInt(500);
-                          data2.updateName('String: ' + a.toString());
+                          d2.updateName('String: ' + a.toString());
                         },
                         child: Text('Update Multiple')),
-                    Text('Data 4: ${data2.c}'),
+                    Text('Data 4: ${d2.c}'),
+                  ],
+                )),
+                Container(
+                    child: Column(
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          int a = Random().nextInt(500);
+                          accountInfo.setAccount('ACCT-' + a.toString());
+                        },
+                        child: Text('Change ACCT')),
+                    Row(
+                      children: [
+                        Text('Account Name: ${accountInfo.accountName} '),
+                        Text('Account Number: ${accountInfo.accountNum}'),
+                      ],
+                    ),
                   ],
                 )),
                 Text('******** End Multiple ******'),
