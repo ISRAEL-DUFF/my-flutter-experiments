@@ -17,9 +17,9 @@ class DemoMultiListener extends StatelessWidget {
           TListenable<AccountInfo>(
             value: AccountInfo(),
           ),
-          TListenable<SomeModel>(
-            value: SomeModel(),
-          ),
+          // TListenable<SomeModel>(
+          //   value: SomeModel(),
+          // ),
         ],
         builder: (context, find, _) {
           MyData1? l1 = find<MyData1>();

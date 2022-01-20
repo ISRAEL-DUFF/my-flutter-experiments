@@ -21,10 +21,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return TMultiprovider(
         providers: [
-          TProvider<int>(data: 5),
-          TProvider<MyData1>(data: MyData1()),
-          TProvider<MyData2>(data: MyData2()),
-          TProvider<String>(data: 'Heelo Wrold')
+          // TProvider<int>(data: 5),
+          // TProvider<MyData1>(data: MyData1()),
+          TProvider(create: (_) => MyData2()),
+          TProvider(
+            create: (_) => MyData1(),
+          )
         ],
         child: MaterialApp(
           title: 'Trouter',
@@ -38,17 +40,14 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var stat = TProvider.of<int>(context)!;
     var data1 = TProvider.of<MyData1>(context)!;
     var data2 = TProvider.of<MyData2>(context)!;
-    int d = stat;
     return Scaffold(
       // appBar: AppBar(title: Text('Cashly App')),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Center(child: Text('Testing Inhrited widget: ${data2.c}')),
-          Center(child: Text(d.toString())),
           ElevatedButton(
               onPressed: () {
                 int a = Random().nextInt(500);

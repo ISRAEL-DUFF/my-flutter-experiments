@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'mixins.dart';
 
-class TProvider<T> extends StatefulWidget {
+typedef Create<R> = R Function(BuildContext context);
+
+class TProvider<T extends TDataNotifier> extends StatefulWidget {
   Widget? child;
-  final T? data;
-  TProvider({Key? key, this.data, this.child}) : super(key: key);
+  Create<T> create;
+  TProvider({Key? key, required this.create, this.child}) : super(key: key);
 
   @override
-  TProviderState createState() => TProviderState<T>(data: data);
+  TProviderState createState() => TProviderState<T>();
 
   static TProviderState? fo<P>(BuildContext context) {
     return context
@@ -23,7 +25,14 @@ class TProvider<T> extends StatefulWidget {
 
 class TProviderState<T> extends State<TProvider> {
   T? data;
-  TProviderState({this.data});
+  // Create<T> create;
+  TProviderState();
+
+  @override
+  void initState() {
+    super.initState();
+    data = widget.create(context) as T;
+  }
 
   @override
   Widget build(BuildContext context) =>
@@ -41,18 +50,11 @@ class TInheritedWidget<T> extends InheritedWidget {
     print('update should notify called ${oldWidget.data}');
     return true;
   }
-
-  // NOTE: this static func has been moved to TProvider
-  // static TProviderState? of<P>(BuildContext context) {
-  //   return context
-  //       .dependOnInheritedWidgetOfExactType<TInheritedWidget<P>>()!
-  //       .state;
-  // }
 }
 
 class TMultiprovider extends StatelessWidget {
   final Widget? child;
-  final List<TProvider> providers;
+  final List<Widget> providers;
   const TMultiprovider({Key? key, this.child, required this.providers})
       : super(key: key);
 
@@ -62,13 +64,21 @@ class TMultiprovider extends StatelessWidget {
   }
 
   TProvider _buildTree({int i = 0}) {
-    if (providers.isEmpty) return TProvider();
-    if (i < providers.length - 1) {
-      providers[i].child = _buildTree(i: i + 1);
-      return providers[i];
+    Widget p = providers[i];
+    TProvider? tp;
+    if (p is TProvider) {
+      tp = p as TProvider;
     } else {
-      providers[i].child = child!;
-      return providers[i];
+      throw ('Type $p is not a $TDataNotifier');
+    }
+
+    if (providers.isEmpty) return TProvider(create: (_) => TDataNotifier());
+    if (i < providers.length - 1) {
+      tp.child = _buildTree(i: i + 1);
+      return tp;
+    } else {
+      tp.child = child!;
+      return tp;
     }
   }
 }
@@ -112,7 +122,7 @@ class TListenable<T> with TypeCheck {
   T? value;
   TListenable({this.value}) {
     if (!isSubtype<T, TDataNotifier>()) {
-      throw ('Type ${T} must be a subtype of ${TDataNotifier}');
+      throw ('Type $T must be a subtype of $TDataNotifier');
     }
   }
 
