@@ -1,10 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'mixins.dart';
+import './data_extensions.dart';
 
 typedef Create<R> = R Function(BuildContext context);
 
-class TProvider<T extends TDataNotifier> extends StatefulWidget {
+class TProvider<T extends ChangeNotifier> extends StatefulWidget {
   Widget? child;
   Create<T> create;
   TProvider({Key? key, required this.create, this.child}) : super(key: key);
@@ -25,13 +27,16 @@ class TProvider<T extends TDataNotifier> extends StatefulWidget {
 
 class TProviderState<T> extends State<TProvider> {
   T? data;
-  // Create<T> create;
   TProviderState();
 
   @override
   void initState() {
     super.initState();
     data = widget.create(context) as T;
+  }
+
+  rebuild() {
+    setState(() {});
   }
 
   @override
@@ -54,27 +59,33 @@ class TInheritedWidget<T> extends InheritedWidget {
 
 class TMultiprovider extends StatelessWidget {
   final Widget? child;
-  final List<Widget> providers;
-  const TMultiprovider({Key? key, this.child, required this.providers})
-      : super(key: key);
+  List<Widget>? providers = [];
+  final List<Widget> allProvides = [];
+  TMultiprovider({Key? key, this.child, this.providers}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return _buildTree();
+    List<Widget> provs = context.tGetItProviders();
+    allProvides.addAll(providers!);
+    allProvides.addAll(provs);
+    return _buildTree(context);
   }
 
-  TProvider _buildTree({int i = 0}) {
-    Widget p = providers[i];
+  TProvider _buildTree(BuildContext context, {int i = 0}) {
+    // Widget p = providers[i];
+    // if (providers.isEmpty) return TProvider(create: (_) => TDataNotifier());
+    if (allProvides.isEmpty) return TProvider(create: (_) => TDataNotifier());
+
+    Widget p = allProvides[i];
     TProvider? tp;
     if (p is TProvider) {
       tp = p as TProvider;
     } else {
-      throw ('Type $p is not a $TDataNotifier');
+      throw ('Type $p is not a $TProvider');
     }
 
-    if (providers.isEmpty) return TProvider(create: (_) => TDataNotifier());
-    if (i < providers.length - 1) {
-      tp.child = _buildTree(i: i + 1);
+    if (i < allProvides.length - 1) {
+      tp.child = _buildTree(context, i: i + 1);
       return tp;
     } else {
       tp.child = child!;
@@ -85,16 +96,12 @@ class TMultiprovider extends StatelessWidget {
 
 class TDataNotifier extends ValueNotifier<int> {
   TDataNotifier() : super(Random().nextInt(500));
-
-  @override
-  notifyListeners() {
-    // TODO: custom logic here
-
-    // well, still thinking of what / how to update this 'value'
-    // value = Random().nextInt(500);
-
-    // finally call notifyListeners from Super class ValueNotifier
-    super.notifyListeners();
+  updateValue({int? v}) {
+    if (v == null) {
+      value = Random().nextInt(500);
+    } else {
+      value = v;
+    }
   }
 }
 
@@ -121,8 +128,12 @@ class TListenableBuilder<T extends TDataNotifier> extends StatelessWidget {
 class TListenable<T> with TypeCheck {
   T? value;
   TListenable({this.value}) {
-    if (!isSubtype<T, TDataNotifier>()) {
-      throw ('Type $T must be a subtype of $TDataNotifier');
+    // if (!isSubtype<T, TDataNotifier>()) {
+    //   throw ('Type $T must be a subtype of $TDataNotifier');
+    // }
+
+    if (!isSubtype<T, ChangeNotifier>()) {
+      throw ('Type $T must be a subtype of $ChangeNotifier');
     }
   }
 
@@ -138,7 +149,7 @@ class TListenable<T> with TypeCheck {
 
 class TMultiListenableBuilder extends StatefulWidget {
   final Widget Function(
-      BuildContext, T? Function<T extends TDataNotifier>(), Widget?) builder;
+      BuildContext, T? Function<T extends ChangeNotifier>(), Widget?) builder;
   final Widget? child;
   final List<TListenable> values;
   const TMultiListenableBuilder(
@@ -147,7 +158,7 @@ class TMultiListenableBuilder extends StatefulWidget {
   @override
   TMultiListenableBuilderState createState() => TMultiListenableBuilderState();
 
-  T? find<T extends TDataNotifier>() {
+  T? find<T extends ChangeNotifier>() {
     for (TListenable l in values) {
       if (l.value is T) {
         return l.value;
@@ -159,9 +170,12 @@ class TMultiListenableBuilder extends StatefulWidget {
 class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     with TypeCheck {
   bool initialized = false;
+  int rebuildValue = 0;
   @override
   void initState() {
     super.initState();
+    rebuildValue = context.tDataListenable().value;
+    context.tDataListenable().addListener(listenForRebuild);
   }
 
   @override
@@ -170,6 +184,7 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     for (TListenable l in widget.values) {
       l.value.removeListener(listenForUpdate);
     }
+    context.tDataListenable().removeListener(listenForRebuild);
   }
 
   initListeners() {
@@ -186,18 +201,17 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
       setState(() {
         initialized = true;
+        rebuildValue = context.tDataListenable().value;
       });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (initialized) {
-      return _buildTree();
-    } else {
+    if (!initialized || rebuildValue != context.tDataListenable().value) {
       initListeners();
-      return Container();
     }
+    return _buildTree();
   }
 
   Widget _buildTree({int i = 0}) {
@@ -214,5 +228,10 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
 
   listenForUpdate() {
     setState(() {});
+  }
+
+  listenForRebuild() {
+    print('Listener called: $rebuildValue');
+    initListeners();
   }
 }

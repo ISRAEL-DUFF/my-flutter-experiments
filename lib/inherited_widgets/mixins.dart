@@ -3,4 +3,8 @@ mixin TypeCheck {
   bool isSubtype<A, B>() {
     return <A>[] is List<B>;
   }
+
+  static bool v1() {
+    return true;
+  }
 }

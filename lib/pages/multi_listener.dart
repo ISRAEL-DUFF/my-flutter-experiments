@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import '../inherited_widgets/provider.dart';
+import '../inherited_widgets/grael.dart';
 import '../model.dart';
 import 'dart:math';
 
 class DemoMultiListener extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // var data1 = TProvider.of<MyData1>(context)!;
-    // var data2 = TProvider.of<MyData2>(context)!;
-
     // Multiple listeners
     return TMultiListenableBuilder(
         values: [
@@ -17,14 +14,24 @@ class DemoMultiListener extends StatelessWidget {
           TListenable<AccountInfo>(
             value: AccountInfo(),
           ),
-          // TListenable<SomeModel>(
-          //   value: SomeModel(),
-          // ),
+          TListenable<SomeModel>(
+            value: SomeModel(),
+          ),
+          TListenable<SomeOtherModel>(),
         ],
         builder: (context, find, _) {
-          MyData1? l1 = find<MyData1>();
-          MyData2? d2 = find<MyData2>()!;
+          /// the [find] fn works same as context.find except that it can only
+          /// find values you are currently listening on
+          /// NOTE: if all the values you are listening on are already provided,
+          /// then ignore the find and use context.find context.find instead
           AccountInfo accountInfo = find<AccountInfo>()!;
+          SomeModel someModel = find<SomeModel>()!;
+
+          // OR find values you provided globally
+          MyData1? l1 = context.find<MyData1>();
+          MyData2? d2 = context.find<MyData2>()!;
+          SomeOtherModel someOtherModel = context.find<SomeOtherModel>()!;
+
           return Center(
             child: Column(
               children: [
@@ -67,6 +74,24 @@ class DemoMultiListener extends StatelessWidget {
                       children: [
                         Text('Account Name: ${accountInfo.accountName} '),
                         Text('Account Number: ${accountInfo.accountNum}'),
+                      ],
+                    ),
+                  ],
+                )),
+                Container(
+                    child: Column(
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          someModel.randomUpdate();
+                          someOtherModel.randomUpdate();
+                        },
+                        child: Text('Random Update')),
+                    Row(
+                      children: [
+                        Text(
+                            'Some Model ID: ${someModel.id}, OtherModel ID: ${someOtherModel.id} '),
+                        // Text('Account Number: ${}'),
                       ],
                     ),
                   ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import './cashly/theme.dart';
 import './cashly/buttons.dart';
 import './inherited_widgets/provider.dart';
+import './inherited_widgets/grael.dart';
 import './model.dart';
 import 'dart:math';
 
@@ -10,6 +11,11 @@ import './pages/single_listener.dart';
 import './pages/multi_listener.dart';
 
 void main() {
+  StateProvider.initializeState(
+    (sl) async {
+      return await sl.registerLazySingletonP(() => MyData1());
+    },
+  );
   runApp(const MyApp());
 }
 
@@ -21,11 +27,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return TMultiprovider(
         providers: [
-          // TProvider<int>(data: 5),
-          // TProvider<MyData1>(data: MyData1()),
           TProvider(create: (_) => MyData2()),
+          // TProvider(
+          //   create: (_) => MyData1(),
+          // )
           TProvider(
-            create: (_) => MyData1(),
+            create: (_) => SomeOtherModel(),
           )
         ],
         child: MaterialApp(
@@ -50,11 +57,11 @@ class MyHomePage extends StatelessWidget {
           Center(child: Text('Testing Inhrited widget: ${data2.c}')),
           ElevatedButton(
               onPressed: () {
-                int a = Random().nextInt(500);
-                // stat.updateData(a);
-                data1.updateA(a);
+                // int a = Random().nextInt(500);
+                // data1.updateA(a);
+                context.refresh<MyData1>();
               },
-              child: Text('Update value')),
+              child: Text('Reset Value')),
           // PlayState(),
 
           DemoMultiListener(),

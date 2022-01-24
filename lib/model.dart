@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:trouter/inherited_widgets/provider.dart';
+import 'dart:math';
 
 class MyData1 extends TDataNotifier {
   int a = 1;
@@ -23,9 +25,22 @@ class MyData2 extends TDataNotifier {
   }
 }
 
-class SomeModel {
+class SomeModel extends ChangeNotifier {
   int id = 1;
   String label = 'C';
+
+  randomUpdate() {
+    id = Random().nextInt(500);
+    notifyListeners();
+  }
+}
+
+class SomeOtherModel extends ChangeNotifier {
+  int id = 1;
+  randomUpdate() {
+    id = Random().nextInt(500);
+    notifyListeners();
+  }
 }
 
 class AccountInfo extends TDataNotifier {
