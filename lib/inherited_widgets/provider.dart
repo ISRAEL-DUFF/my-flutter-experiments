@@ -5,11 +5,37 @@ import 'mixins.dart';
 import './data_extensions.dart';
 
 typedef Create<R> = R Function(BuildContext context);
+// typedef Greal<R> = TProvider Function(
+//     {Key? key, required Create<R> create, Widget? child});
+
+class Grael<T extends ChangeNotifier> extends StatelessWidget {
+  Widget? child;
+  Create<T> create;
+  Key? gkey;
+  Grael({Key? key, required this.create, this.child}) {
+    gkey = key ?? GlobalKey<TProviderState>();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TProvider(key: gkey, create: create, child: child);
+  }
+}
 
 class TProvider<T extends ChangeNotifier> extends StatefulWidget {
   Widget? child;
   Create<T> create;
-  TProvider({Key? key, required this.create, this.child}) : super(key: key);
+
+  static List<Widget> allProviders = [];
+  TProvider({Key? key, required this.create, this.child}) : super(key: key) {
+    // _k = key;
+    // _id = allProviders.length;
+    allProviders.add(this);
+    GetItExtension.registerAnewType<T>();
+    print('Data Notifiers: ${GetItExtension.dataNotifiers}');
+
+    // dataNotifiers[_id!] = TDataNotifier();
+  }
 
   @override
   TProviderState createState() => TProviderState<T>();
@@ -125,7 +151,7 @@ class TListenableBuilder<T extends TDataNotifier> extends StatelessWidget {
 }
 
 // MULTIPLE Listenable
-class TListenable<T> with TypeCheck {
+class TListenable<T extends ChangeNotifier> with TypeCheck {
   T? value;
   TListenable({this.value}) {
     // if (!isSubtype<T, TDataNotifier>()) {
@@ -137,12 +163,44 @@ class TListenable<T> with TypeCheck {
     }
   }
 
-  bool valueFromProvider(BuildContext context) {
+  bool getValueFromProvider(BuildContext context) {
     value = TProvider.of<T>(context);
     if (value == null) {
       return false;
     } else {
       return true;
+    }
+  }
+
+  bool get noValue {
+    if (value == null) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  addListener({void Function()? onUpdate, void Function()? onReset}) {
+    if (!noValue) {
+      if (onUpdate != null) {
+        value!.addListener(onUpdate);
+      }
+
+      if (onReset != null) {
+        GetItExtension.dataNotifiers[T]?.addListener(onReset);
+      }
+    }
+  }
+
+  removeListener({void Function()? onUpdate, void Function()? onReset}) {
+    if (!noValue) {
+      if (onUpdate != null) {
+        value!.removeListener(onUpdate);
+      }
+
+      if (onReset != null) {
+        GetItExtension.dataNotifiers[T]?.removeListener(onReset);
+      }
     }
   }
 }
@@ -161,7 +219,7 @@ class TMultiListenableBuilder extends StatefulWidget {
   T? find<T extends ChangeNotifier>() {
     for (TListenable l in values) {
       if (l.value is T) {
-        return l.value;
+        return l.value as T;
       }
     }
   }
@@ -174,43 +232,50 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   @override
   void initState() {
     super.initState();
-    rebuildValue = context.tDataListenable().value;
-    context.tDataListenable().addListener(listenForRebuild);
+
+    //
+    // rebuildValue = context.tDataListenable().value;
+    // context.tDataListenable().addListener(listenForRebuild);
+
+    // init listeners
+    // initListeners();
   }
 
   @override
   void dispose() {
     super.dispose();
     for (TListenable l in widget.values) {
-      l.value.removeListener(listenForUpdate);
+      // l.value.removeListener(listenForUpdate);
+      l.removeListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
     }
-    context.tDataListenable().removeListener(listenForRebuild);
+    // context.tDataListenable().removeListener(listenForRebuild);
   }
 
   initListeners() {
     // listen for individual changes in listeners
     for (TListenable l in widget.values) {
-      if (l.value == null) {
-        if (!l.valueFromProvider(context)) {
+      if (l.noValue) {
+        if (!l.getValueFromProvider(context)) {
           throw ('No Provider value found for ${l.runtimeType}');
         }
       }
-      l.value.addListener(listenForUpdate);
+      l.addListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
     }
 
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      setState(() {
-        initialized = true;
-        rebuildValue = context.tDataListenable().value;
-      });
-    });
+    // WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+    //   setState(() {
+    //     initialized = true;
+    //     rebuildValue = context.tDataListenable().value;
+    //   });
+    // });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!initialized || rebuildValue != context.tDataListenable().value) {
-      initListeners();
-    }
+    // if (!initialized || rebuildValue != context.tDataListenable().value) {
+    //   initListeners();
+    // }
+    if (!initialized) initListeners();
     return _buildTree();
   }
 
