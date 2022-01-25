@@ -4,6 +4,17 @@ import 'dart:async';
 import './provider.dart';
 import './state_provider.dart';
 
+class TDependencyNotifier<T extends Object> {
+  void Function<R extends Object>(BuildContext) onRebuildDepencies;
+  TDataNotifier dataNotifier;
+  TDependencyNotifier(
+      {required this.dataNotifier, required this.onRebuildDepencies});
+
+  rebuildDependencies(BuildContext context) {
+    onRebuildDepencies<T>(context);
+  }
+}
+
 extension StateExtension<T> on TProviderState<T> {
   // refresh<R extends Object>() {
   //   context.tGetIt().resetLazySingleton(instance: data as R);
@@ -25,7 +36,7 @@ Create<R> crate<R extends Object>(GetIt sl) {
 extension GetItExtension on GetIt {
   static List<Widget> tProviders = [];
   // static TDataNotifier dataNotifier = TDataNotifier();
-  static Map<Type, TDataNotifier> dataNotifiers = {};
+  static Map<Type, TDependencyNotifier> dependencyNotifiers = {};
   registerLazySingletonP<T extends ChangeNotifier>(T Function() factoryFunc,
       {String? instanceName, FutureOr<dynamic> Function(T)? dispose}) async {
     registerLazySingleton(factoryFunc,
@@ -54,10 +65,14 @@ extension GetItExtension on GetIt {
     // allProviders.add(w);
   }
 
-  static registerAnewType<T>() {
+  static registerAnewType<T extends Object>() {
     // store listeners to notify when this object resets
-    if (dataNotifiers[T] == null) {
-      dataNotifiers[T] = TDataNotifier();
+    if (dependencyNotifiers[T] == null) {
+      dependencyNotifiers[T] = TDependencyNotifier(
+          dataNotifier: TDataNotifier(),
+          onRebuildDepencies: <P extends Object>(context) {
+            context._rebuildDependencies<T>();
+          });
     }
   }
 }
@@ -88,14 +103,14 @@ extension StateOnContext on BuildContext {
     });
   }
 
-  // refreshAll() async {
-  //   await tGetIt().reset();
-  //   tGetIt().allReady().then((f) {
-  //     for (Type t in dataNotifiers.keys) {
-  //       _rebuildDependencies<t>();
-  //     }
-  //   });
-  // }
+  refreshAll() async {
+    await tGetIt().reset();
+    tGetIt().allReady().then((f) {
+      for (TDependencyNotifier d in GetItExtension.dependencyNotifiers.values) {
+        d.rebuildDependencies(this);
+      }
+    });
+  }
 
   GetIt tGetIt() {
     return StateProvider.getIt();
@@ -107,11 +122,11 @@ extension StateOnContext on BuildContext {
 
   tUpdateListeners<R extends Object>() {
     // GetItExtension.dataNotifier.updateValue();
-    GetItExtension.dataNotifiers[R]?.updateValue();
+    GetItExtension.dependencyNotifiers[R]?.dataNotifier.updateValue();
   }
 
   TDataNotifier tDataListenable<R extends Object>() {
     // return GetItExtension.dataNotifier;
-    return GetItExtension.dataNotifiers[R]!;
+    return GetItExtension.dependencyNotifiers[R]!.dataNotifier;
   }
 }

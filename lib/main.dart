@@ -57,11 +57,14 @@ class MyHomePage extends StatelessWidget {
           Center(child: Text('Testing Inhrited widget: ${data2.c}')),
           ElevatedButton(
               onPressed: () {
-                // int a = Random().nextInt(500);
-                // data1.updateA(a);
                 context.refresh<MyData1>();
               },
-              child: Text('Reset Value')),
+              child: Text('Reset Data 1')),
+          ElevatedButton(
+              onPressed: () {
+                context.refreshAll();
+              },
+              child: Text('Reset All')),
           // PlayState(),
 
           DemoMultiListener(),

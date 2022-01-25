@@ -32,7 +32,7 @@ class TProvider<T extends ChangeNotifier> extends StatefulWidget {
     // _id = allProviders.length;
     allProviders.add(this);
     GetItExtension.registerAnewType<T>();
-    print('Data Notifiers: ${GetItExtension.dataNotifiers}');
+    print('Data Notifiers: ${GetItExtension.dependencyNotifiers}');
 
     // dataNotifiers[_id!] = TDataNotifier();
   }
@@ -187,7 +187,8 @@ class TListenable<T extends ChangeNotifier> with TypeCheck {
       }
 
       if (onReset != null) {
-        GetItExtension.dataNotifiers[T]?.addListener(onReset);
+        GetItExtension.dependencyNotifiers[T]?.dataNotifier
+            .addListener(onReset);
       }
     }
   }
@@ -199,7 +200,8 @@ class TListenable<T extends ChangeNotifier> with TypeCheck {
       }
 
       if (onReset != null) {
-        GetItExtension.dataNotifiers[T]?.removeListener(onReset);
+        GetItExtension.dependencyNotifiers[T]?.dataNotifier
+            .removeListener(onReset);
       }
     }
   }
