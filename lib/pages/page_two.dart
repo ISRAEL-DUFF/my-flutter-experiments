@@ -6,7 +6,7 @@ import 'dart:math';
 class DemoPage2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    print('BUILDING DEMO PAGE 2');
+    print('DEMO PAGE 2');
     return Scaffold(
       appBar: AppBar(),
       body: Container(

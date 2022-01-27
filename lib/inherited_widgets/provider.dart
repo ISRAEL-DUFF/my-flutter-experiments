@@ -11,8 +11,6 @@ debugPrint(Object? object) {
 }
 
 typedef Create<R> = R Function(BuildContext context);
-// typedef Greal<R> = TProvider Function(
-//     {Key? key, required Create<R> create, Widget? child});
 
 class Grael<T extends ChangeNotifier> extends StatelessWidget {
   Widget? child;
@@ -56,33 +54,73 @@ class TProvider<T extends ChangeNotifier> extends StatefulWidget {
 
 class TProviderState<T> extends State<TProvider> {
   T? data;
+  TDataNotifier notifier = TDataNotifier();
+  int? _currentBuildValue;
   TProviderState();
 
   @override
   void initState() {
     super.initState();
     data = widget.create(context) as T;
-  }
-
-  rebuild() {
-    setState(() {});
+    _currentBuildValue = notifier.value;
   }
 
   @override
-  Widget build(BuildContext context) =>
-      TInheritedWidget(child: widget.child, data: data, state: this);
+  void didChangeDependencies() {
+    // change dependencies here
+    _currentBuildValue = notifier.value;
+    debugPrint('TProvider Dependency changed: $_currentBuildValue');
+
+    // finally call super
+    super.didChangeDependencies();
+  }
+
+  rebuild() {
+    setState(() {
+      data = widget.create(context) as T;
+      notifier.updateValue();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => TInheritedWidget(
+        child: widget.child,
+        data: data,
+        state: this,
+        buildValue: _currentBuildValue!,
+      );
 }
 
 class TInheritedWidget<T> extends InheritedWidget {
   final T? data;
   final TProviderState? state;
-  TInheritedWidget({Key? key, this.state, @required Widget? child, this.data})
+  final int buildValue;
+  TInheritedWidget(
+      {Key? key,
+      this.state,
+      @required Widget? child,
+      this.data,
+      required this.buildValue})
       : super(key: key, child: child!);
 
   @override
   bool updateShouldNotify(TInheritedWidget oldWidget) {
-    debugPrint('update should notify called ${oldWidget.data}');
-    return true;
+    // if (buildValue == oldWidget.buildValue) {
+    //   debugPrint('Update should NOT Notify Descendants');
+    //   return false;
+    // } else {
+    //   debugPrint('Update IS Notifying inherited descendants ');
+    //   return true;
+    // }
+    debugPrint('BuildValues: ${oldWidget.buildValue}, $buildValue');
+
+    if (data == oldWidget.data) {
+      debugPrint('Update should NOT Notify Descendants');
+      return false;
+    } else {
+      debugPrint('Update IS Notifying inherited descendants ');
+      return true;
+    }
   }
 }
 
@@ -163,25 +201,27 @@ class TListenable<T extends ChangeNotifier> with TypeCheck {
     }
   }
 
-  bool getValueFromProvider(BuildContext context) {
+  void getValueFromProvider(BuildContext context) {
     value = TProvider.of<T>(context);
     if (value == null) {
-      return false;
-    } else {
-      return true;
+      throw ('No Provider value found for $T');
     }
   }
 
-  bool get noValue {
+  bool get hasNoValue {
     if (value == null) {
       return true;
     } else {
       return false;
     }
+  }
+
+  bool get hasValue {
+    return !hasNoValue;
   }
 
   addListener({void Function()? onUpdate, void Function()? onReset}) {
-    if (!noValue) {
+    if (hasValue) {
       if (onUpdate != null) {
         value!.addListener(onUpdate);
       }
@@ -194,7 +234,7 @@ class TListenable<T extends ChangeNotifier> with TypeCheck {
   }
 
   removeListener({void Function()? onUpdate, void Function()? onReset}) {
-    if (!noValue) {
+    if (hasValue) {
       if (onUpdate != null) {
         value!.removeListener(onUpdate);
       }
@@ -282,18 +322,10 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     debugPrint('Initializing Listeners;... Initialized = $initialized');
     // listen for individual changes in listeners
     for (TListenable l in widget.values) {
-      if (l.noValue) {
-        if (!l.getValueFromProvider(context)) {
-          throw ('No Provider value found for ${l.runtimeType}');
-        }
+      if (l.hasNoValue) {
+        l.getValueFromProvider(context);
       }
       l.addListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
-
-      // if (watchRebuild) {
-      //   l.addListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
-      // } else {
-      //   l.addListener(onUpdate: listenForUpdate);
-      // }
     }
     initialized = true;
   }

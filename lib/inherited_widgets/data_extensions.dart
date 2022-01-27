@@ -84,7 +84,7 @@ extension StateOnContext on BuildContext {
   }
 
   void _rebuildDependencies<R extends Object>() {
-    tWState<R>().data = tWState<R>().widget.create(this);
+    // tWState<R>().data = tWState<R>().widget.create(this);
     tWState<R>().rebuild();
     tUpdateListeners<R>();
   }
