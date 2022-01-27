@@ -4,6 +4,12 @@ import 'dart:math';
 import 'mixins.dart';
 import './data_extensions.dart';
 
+// debug
+bool debugMode = true;
+debugPrint(Object? object) {
+  if (debugMode) print(object);
+}
+
 typedef Create<R> = R Function(BuildContext context);
 // typedef Greal<R> = TProvider Function(
 //     {Key? key, required Create<R> create, Widget? child});
@@ -32,9 +38,6 @@ class TProvider<T extends ChangeNotifier> extends StatefulWidget {
     // _id = allProviders.length;
     allProviders.add(this);
     GetItExtension.registerAnewType<T>();
-    print('Data Notifiers: ${GetItExtension.dependencyNotifiers}');
-
-    // dataNotifiers[_id!] = TDataNotifier();
   }
 
   @override
@@ -78,7 +81,7 @@ class TInheritedWidget<T> extends InheritedWidget {
 
   @override
   bool updateShouldNotify(TInheritedWidget oldWidget) {
-    print('update should notify called ${oldWidget.data}');
+    debugPrint('update should notify called ${oldWidget.data}');
     return true;
   }
 }
@@ -98,14 +101,14 @@ class TMultiprovider extends StatelessWidget {
   }
 
   TProvider _buildTree(BuildContext context, {int i = 0}) {
-    // Widget p = providers[i];
-    // if (providers.isEmpty) return TProvider(create: (_) => TDataNotifier());
     if (allProvides.isEmpty) return TProvider(create: (_) => TDataNotifier());
 
     Widget p = allProvides[i];
     TProvider? tp;
     if (p is TProvider) {
-      tp = p as TProvider;
+      tp = p;
+    } else if (p is Grael) {
+      tp = p.build(context) as TProvider;
     } else {
       throw ('Type $p is not a $TProvider');
     }
@@ -131,33 +134,30 @@ class TDataNotifier extends ValueNotifier<int> {
   }
 }
 
-class TListenableBuilder<T extends TDataNotifier> extends StatelessWidget {
-  final Widget Function(BuildContext, T, Widget?) builder;
-  Widget? child;
-  T value;
-  TListenableBuilder(
-      {Key? key, required this.value, required this.builder, this.child})
-      : super(key: key);
+//
+// class TListenableBuilder<T extends TDataNotifier> extends StatelessWidget {
+//   final Widget Function(BuildContext, T, Widget?) builder;
+//   Widget? child;
+//   T value;
+//   TListenableBuilder(
+//       {Key? key, required this.value, required this.builder, this.child})
+//       : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-        valueListenable: value,
-        child: child,
-        builder: (context, v, child) {
-          return builder(context, value, child);
-        });
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return ValueListenableBuilder<int>(
+//         valueListenable: value,
+//         child: child,
+//         builder: (context, v, child) {
+//           return builder(context, value, child);
+//         });
+//   }
+// }
 
 // MULTIPLE Listenable
 class TListenable<T extends ChangeNotifier> with TypeCheck {
   T? value;
   TListenable({this.value}) {
-    // if (!isSubtype<T, TDataNotifier>()) {
-    //   throw ('Type $T must be a subtype of $TDataNotifier');
-    // }
-
     if (!isSubtype<T, ChangeNotifier>()) {
       throw ('Type $T must be a subtype of $ChangeNotifier');
     }
@@ -207,6 +207,27 @@ class TListenable<T extends ChangeNotifier> with TypeCheck {
   }
 }
 
+// class MultiListenableBuilder extends StatelessWidget {
+//   final Widget Function(
+//       BuildContext, T? Function<T extends ChangeNotifier>(), Widget?) builder;
+//   final Widget? child;
+//   final List<TListenable> values;
+//   Key? gkey;
+
+//   MultiListenableBuilder(
+//       {Key? key, required this.values, required this.builder, this.child}) {
+//     gkey = key ?? GlobalKey<TMultiListenableBuilderState>();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) => TMultiListenableBuilder(
+//         key: gkey,
+//         values: values,
+//         builder: builder,
+//         child: child,
+//       );
+// }
+
 class TMultiListenableBuilder extends StatefulWidget {
   final Widget Function(
       BuildContext, T? Function<T extends ChangeNotifier>(), Widget?) builder;
@@ -230,30 +251,35 @@ class TMultiListenableBuilder extends StatefulWidget {
 class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     with TypeCheck {
   bool initialized = false;
-  int rebuildValue = 0;
+
   @override
   void initState() {
     super.initState();
+  }
 
-    //
-    // rebuildValue = context.tDataListenable().value;
-    // context.tDataListenable().addListener(listenForRebuild);
+  @override
+  void didChangeDependencies() {
+    // change dependencies here
+    if (!initialized) {
+      initListeners();
+    }
+    debugPrint('Dependency changed: $initialized');
 
-    // init listeners
-    // initListeners();
+    // finally call super
+    super.didChangeDependencies();
   }
 
   @override
   void dispose() {
     super.dispose();
     for (TListenable l in widget.values) {
-      // l.value.removeListener(listenForUpdate);
       l.removeListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
     }
-    // context.tDataListenable().removeListener(listenForRebuild);
+    debugPrint('Widget State Dispose called');
   }
 
-  initListeners() {
+  initListeners([bool watchRebuild = false]) {
+    debugPrint('Initializing Listeners;... Initialized = $initialized');
     // listen for individual changes in listeners
     for (TListenable l in widget.values) {
       if (l.noValue) {
@@ -262,22 +288,18 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
         }
       }
       l.addListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
-    }
 
-    // WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-    //   setState(() {
-    //     initialized = true;
-    //     rebuildValue = context.tDataListenable().value;
-    //   });
-    // });
+      // if (watchRebuild) {
+      //   l.addListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
+      // } else {
+      //   l.addListener(onUpdate: listenForUpdate);
+      // }
+    }
+    initialized = true;
   }
 
   @override
   Widget build(BuildContext context) {
-    // if (!initialized || rebuildValue != context.tDataListenable().value) {
-    //   initListeners();
-    // }
-    if (!initialized) initListeners();
     return _buildTree();
   }
 
@@ -294,11 +316,12 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   }
 
   listenForUpdate() {
-    setState(() {});
+    debugPrint('Listen for update called');
+    if (mounted) setState(() {});
   }
 
   listenForRebuild() {
-    print('Listener called: $rebuildValue');
-    initListeners();
+    debugPrint('Listener for Rebuild called');
+    // initListeners();
   }
 }

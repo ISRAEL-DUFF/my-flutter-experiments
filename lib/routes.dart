@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:trouter/pages/page_one.dart';
+import 'package:trouter/pages/page_two.dart';
 import './trouter.dart';
 
 const String INVITE_LINK = '/app/invite';
 
+var routes = {
+  '/': (context) => MyHomePage(),
+  '/page2': (context) => DemoPage2(),
+};
+
 TRouter myRouter = TRouter(routes: {
-  '/': RouteRedirect(to: '/app'),
-  // '/app': RouteRedirect(to: '/home'),
+  // '/': RouteRedirect(to: '/app'),
+  '/': (context) => MyHomePage(),
+  // '/page1': (context) => RouteRedirect(to: '/'),
+  '/page2': (context) => DemoPage2(),
   '/onboard': (context) => TestPage(n: 49),
   '/auth': Trouter(
       initialRoute: '/',
@@ -66,7 +75,7 @@ TRouter myRouter = TRouter(routes: {
   // '/register': (context) => SignUpPage(),
   // '/splashscreen': (context) => SplashScreen(),
   // '/': (context) => LoginPage()
-}, bootStrapPage: TestPage(n: 100));
+}, bootStrapPage: MyHomePage());
 
 // This function executes when the app Just launches
 class TestPage extends StatelessWidget {

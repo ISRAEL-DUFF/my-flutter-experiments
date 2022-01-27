@@ -25,8 +25,6 @@ extension StateExtension<T> on TProviderState<T> {
   // }
 }
 
-// typedef pFunc<R extends TDataNotifier> = Create<R> Function();
-
 Create<R> crate<R extends Object>(GetIt sl) {
   return (BuildContext context) {
     return sl.get<R>();
@@ -35,7 +33,6 @@ Create<R> crate<R extends Object>(GetIt sl) {
 
 extension GetItExtension on GetIt {
   static List<Widget> tProviders = [];
-  // static TDataNotifier dataNotifier = TDataNotifier();
   static Map<Type, TDependencyNotifier> dependencyNotifiers = {};
   registerLazySingletonP<T extends ChangeNotifier>(T Function() factoryFunc,
       {String? instanceName, FutureOr<dynamic> Function(T)? dispose}) async {
@@ -48,8 +45,6 @@ extension GetItExtension on GetIt {
     // create a provider for this type T
     Widget w = TProvider(create: crate<T>(GetIt.instance));
     tProviders.add(w);
-
-    // allProviders.add(w);
   }
 
   registerSingletonP<T extends ChangeNotifier>(T instance,
@@ -61,6 +56,7 @@ extension GetItExtension on GetIt {
         signalsReady: signalsReady,
         dispose: dispose);
     Widget w = TProvider(create: crate<T>(GetIt.instance));
+    // Widget w = Grael(create: crate<T>(GetIt.instance));
     tProviders.add(w);
     // allProviders.add(w);
   }
@@ -93,17 +89,16 @@ extension StateOnContext on BuildContext {
     tUpdateListeners<R>();
   }
 
-  refresh<R extends Object>() {
+  reset<R extends Object>() {
     tGetIt().resetLazySingleton<R>();
     tGetIt().allReady().then((f) {
-      // tWState<R>().data = tWState<R>().widget.create(this);
-      // tWState<R>().rebuild();
-      // tUpdateListeners();
       _rebuildDependencies<R>();
     });
   }
 
-  refreshAll() async {
+  resetAll() async {
+    // TODO: Implement this feature
+    // This feature should only reset (and not unregister) all lazySinglitons
     await tGetIt().reset();
     tGetIt().allReady().then((f) {
       for (TDependencyNotifier d in GetItExtension.dependencyNotifiers.values) {
@@ -121,12 +116,14 @@ extension StateOnContext on BuildContext {
   }
 
   tUpdateListeners<R extends Object>() {
-    // GetItExtension.dataNotifier.updateValue();
     GetItExtension.dependencyNotifiers[R]?.dataNotifier.updateValue();
   }
 
   TDataNotifier tDataListenable<R extends Object>() {
-    // return GetItExtension.dataNotifier;
     return GetItExtension.dependencyNotifiers[R]!.dataNotifier;
+  }
+
+  TListenable<T> value<T extends ChangeNotifier>({T? value}) {
+    return TListenable(value: value);
   }
 }

@@ -9,8 +9,12 @@ class DemoMultiListener extends StatelessWidget {
     // Multiple listeners
     return TMultiListenableBuilder(
         values: [
-          TListenable<MyData1>(), // i.e value = TProvider.of<MyData1>(context)
-          TListenable<MyData2>(), // same as above
+          /// this is same as: value = TProvider.of<MyData1>(context)
+          /// OR: value = context.find<MyData1>()
+          TListenable<MyData1>(),
+          TListenable<MyData2>(),
+
+          /// You can also explicitely specify value
           TListenable<AccountInfo>(
             value: AccountInfo(),
           ),
@@ -23,7 +27,7 @@ class DemoMultiListener extends StatelessWidget {
           /// the [find] fn works same as context.find except that it can only
           /// find values you are currently listening on
           /// NOTE: if all the values you are listening on are already provided,
-          /// then ignore the find and use context.find context.find instead
+          /// then ignore the find and use context.find instead
           AccountInfo accountInfo = find<AccountInfo>()!;
           SomeModel someModel = find<SomeModel>()!;
 
@@ -41,12 +45,21 @@ class DemoMultiListener extends StatelessWidget {
                   children: [
                     ElevatedButton(
                         onPressed: () {
-                          int a = Random().nextInt(500);
-                          // data1.data.updateA(a);
-                          l1!.updateA(a);
+                          l1!.randomUpdate();
                         },
                         child: Text('Update Multiple 1')),
-                    Text('Data 5: ${l1!.a}'),
+                    Text('Data 5: ${l1!.id}'),
+                  ],
+                )),
+                Container(
+                    child: Row(
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          d2.randomUpdate();
+                        },
+                        child: Text('Update Multiple')),
+                    Text('Data 4: ${d2.id}'),
                   ],
                 )),
                 Container(
@@ -55,27 +68,10 @@ class DemoMultiListener extends StatelessWidget {
                     ElevatedButton(
                         onPressed: () {
                           int a = Random().nextInt(500);
-                          d2.updateName('String: ' + a.toString());
-                        },
-                        child: Text('Update Multiple')),
-                    Text('Data 4: ${d2.c}'),
-                  ],
-                )),
-                Container(
-                    child: Column(
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          int a = Random().nextInt(500);
                           accountInfo.setAccount('ACCT-' + a.toString());
                         },
                         child: Text('Change ACCT')),
-                    Row(
-                      children: [
-                        Text('Account Name: ${accountInfo.accountName} '),
-                        Text('Account Number: ${accountInfo.accountNum}'),
-                      ],
-                    ),
+                    Text('Account Number: ${accountInfo.accountNum}'),
                   ],
                 )),
                 Container(

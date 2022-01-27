@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import './cashly/theme.dart';
 import './cashly/buttons.dart';
-import './inherited_widgets/provider.dart';
 import './inherited_widgets/grael.dart';
 import './model.dart';
 import 'dart:math';
-
-import './pages/page_one.dart';
-import './pages/single_listener.dart';
-import './pages/multi_listener.dart';
+import './routes.dart';
 
 void main() {
   StateProvider.initializeState(
     (sl) async {
-      return await sl.registerLazySingletonP(() => MyData1());
+      /// these models are not just registered, but they are also provided
+      /// via inherited widget. that's the reason behind the P
+      await sl.registerLazySingletonP(() => MyData1());
+      await sl.registerLazySingletonP(() => MyData2());
+      await sl.registerLazySingletonP(() => MyData3());
+
+      // you can also do your normal stuff with getIt
+      // sl.registerLazySingleton(() => MyData4());
+      sl.registerLazySingleton(() => MyData5());
     },
   );
   runApp(const MyApp());
@@ -27,51 +31,27 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return TMultiprovider(
         providers: [
-          TProvider(create: (_) => MyData2()),
-          // TProvider(
-          //   create: (_) => MyData1(),
-          // )
+          // Grael(create: (_) => MyData4()),
+          TProvider(create: (_) => MyData4()),
+
+          /// don't want to use sl.registerLazySinglitonP?
+          /// No problem, you probably need to do something with the build context
+          /// here it is:
+          TProvider(create: (context) => StateProvider.getIt()<MyData5>()),
+
+          //
           TProvider(
             create: (_) => SomeOtherModel(),
           )
         ],
         child: MaterialApp(
-          title: 'Trouter',
-          color: CashlyThemeData.accentColor.withOpacity(1),
-          theme: CashlyThemeData.themeData(),
-          home: MyHomePage(),
-        ));
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    var data1 = TProvider.of<MyData1>(context)!;
-    var data2 = TProvider.of<MyData2>(context)!;
-    return Scaffold(
-      // appBar: AppBar(title: Text('Cashly App')),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Center(child: Text('Testing Inhrited widget: ${data2.c}')),
-          ElevatedButton(
-              onPressed: () {
-                context.refresh<MyData1>();
-              },
-              child: Text('Reset Data 1')),
-          ElevatedButton(
-              onPressed: () {
-                context.refreshAll();
-              },
-              child: Text('Reset All')),
-          // PlayState(),
-
-          DemoMultiListener(),
-          PlayState(),
-          DemoSingleListener()
-        ],
-      ),
-    );
+            title: 'Trouter',
+            color: CashlyThemeData.accentColor.withOpacity(1),
+            theme: CashlyThemeData.themeData(),
+            // home: MyHomePage(),
+            onGenerateInitialRoutes: myRouter.onGenerateInitialRoute,
+            onGenerateRoute: myRouter.onGenerateRoute
+            // routes: routes,
+            ));
   }
 }

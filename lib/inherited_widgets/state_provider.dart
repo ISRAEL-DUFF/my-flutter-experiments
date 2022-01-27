@@ -12,9 +12,6 @@ class StateProvider {
     //   return true;
     // });
     await registerDep(_sl);
-    // MyData1 d = _sl<MyData1>(instanceName: 'MyData1');
-    // _sl.resetLazySingleton(instanceName: 'MyData1');
-    // d = _sl<MyData1>(instanceName: 'MyData1');
   }
 
   Future<bool> reset() {
@@ -22,14 +19,6 @@ class StateProvider {
       return true;
     });
   }
-
-  // refresh<R extends Object>() {
-  //   context.tGetIt().resetLazySingleton(instance: data as R);
-  //   context.tGetIt().allReady().then((f) {
-  //     data = widget.create(context) as T;
-  //     context.tUpdateListeners();
-  //   });
-  // }
 
   static GetIt getIt() {
     return _sl;

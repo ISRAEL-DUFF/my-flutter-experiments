@@ -6,6 +6,12 @@ typedef GuardFn = RouteGuard Function(String, dynamic);
 typedef BootFn = Function(BuildContext, Uri?);
 // typedef Map<String, dynamic> Json;
 
+bool debugMode = false;
+
+debugPrint(Object? object) {
+  if (debugMode) print(object);
+}
+
 class TNavigator extends StatefulWidget {
   String? initialRoute;
   String? parentName;
@@ -26,14 +32,15 @@ class _TNavigatorState extends State<TNavigator> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   initState() {
     super.initState();
-    print(
-        'CUSTOM ROUTER INIT ROUTE: ${widget.initialRoute}, ${widget.parentName} ${widget.history}');
+    debugPrint(
+        'CUSTOM ROUTER INIT ROUTE: ${widget.initialRoute}, ${widget.parentName}');
   }
 
   @override
   Widget build(BuildContext context) {
     Navigator nav;
     if (widget.history != null && widget.history!.isNotEmpty) {
+      debugPrint('Navigator With History: ${widget.history}');
       nav = Navigator(
         key: _navigatorKey,
         initialRoute: widget.initialRoute,
@@ -49,6 +56,7 @@ class _TNavigatorState extends State<TNavigator> {
         onGenerateRoute: onGenerateRoute,
       );
     } else {
+      debugPrint('Navigator with Route initialRoute: ${widget.initialRoute} ');
       nav = Navigator(
         key: _navigatorKey,
         initialRoute: widget.initialRoute,
@@ -71,7 +79,7 @@ class _TNavigatorState extends State<TNavigator> {
   }
 
   Route onGenerateRoute(RouteSettings settings) {
-    print('oGenerate Route Called: $settings');
+    debugPrint('oGenerate Route Called: $settings');
     dynamic args = settings.arguments;
     // var routeArgs = {};
     // if (args != null) {
@@ -145,9 +153,9 @@ class TRouter {
   }
 
   printRoutingTable() {
-    print('____Routing Table____');
+    debugPrint('____Routing Table____');
     for (var l in routingTable!.entries) {
-      print(l.value);
+      debugPrint(l.value);
     }
   }
 
@@ -178,7 +186,8 @@ class TRouter {
           h.add(parentName);
         }
 
-        if (parentName == '/') {
+        // don't add '/' to root history
+        if (parentName == '/' && r != '/') {
           h.add('/');
         }
 
@@ -191,7 +200,6 @@ class TRouter {
           nameKey = '$nameKey$parentName';
         else
           nameKey = '$nameKey$r';
-        // print('NameKey: $nameKey, $history');
         if (nameKey == '' && parentName == '/') {
           nameKey = '/';
         }
@@ -203,8 +211,8 @@ class TRouter {
             parentName: pName,
             guards: gs,
             history: routes[r] is RouteRedirect
-                ? []
-                : h, // No history for RouteRedirect
+                ? [] // No history for RouteRedirect
+                : h,
             rootRouter: this);
       } else if (routes[r] is Trouter) {
         List<GuardFn> gs = [];
@@ -227,7 +235,8 @@ class TRouter {
   Route<dynamic> generateRoute(RouteSettings settings) {
     // TODO: parse the settings.name here
     var uri = Uri.parse(settings.name!);
-    print('settings = $settings, path = ${uri.path}, ${uri.queryParameters}');
+    debugPrint(
+        'settings = $settings, path = ${uri.path}, ${uri.queryParameters}');
     RouteSettings newSettings;
     if (uri.queryParameters.isEmpty) {
       newSettings =
@@ -239,7 +248,7 @@ class TRouter {
       });
     }
 
-    print('ROUTE SEttings: $newSettings');
+    debugPrint('ROUTE SEttings: $newSettings');
 
     TRoute? t = routingTable![uri.path];
     var builder;
@@ -259,7 +268,7 @@ class TRouter {
   }
 
   List<Route> onGenerateInitialRoute(String initRoute) {
-    print('initialRoute: $initialRoute, $initRoute');
+    debugPrint('initialRoute: $initialRoute, $initRoute');
 
     // NOTE: the [initRoute] is the route used to launch the app
     // the [initialRoute] is initial route provided to TRouter
@@ -274,7 +283,7 @@ class TRouter {
     var uri = Uri.parse(initialR);
     print(uri.path);
     uri.queryParameters.forEach((k, v) {
-      print('key: $k - value: $v');
+      debugPrint('key: $k - value: $v');
     });
     return [
       MaterialPageRoute(
@@ -390,7 +399,7 @@ class TRoute {
           routeArguments: routeArguments);
       if (!r.allow!) return r.redirectTo;
 
-      print('ROUTING for:......... ${name}');
+      debugPrint('ROUTING for:......... ${name}');
       if (isTrouter!) {
         return (context) => TNavigator(
             rootRouter: rootRouter,
@@ -408,12 +417,12 @@ class TRoute {
 
   List<Widget Function(BuildContext)> _buildHistory({dynamic routeArguments}) {
     List<BuilderFn> h = [];
-    print('Resolving History: $history');
+    debugPrint('Resolving History: $history');
     String path = '';
     for (String r in history!) {
-      path = path == '/' ? '$r' : '$path$r';
+      path = path == '/' ? r : '$path$r';
       dynamic b = rootRouter!.routingTable![path];
-      if (b == null || !(b is TRoute)) throw ('Invalide History $path');
+      if (b == null || b is! TRoute) throw ('Invalide History $path');
       if (b.builder is BuilderFn) {
         RouteGuard r = RouteGuard.execute(
             guards: b.guards,
@@ -444,7 +453,7 @@ class RouteRedirect {
   }
 
   BuilderFn resolve(Map<String, dynamic> routingTable) {
-    print('Resolving Redirect: $this');
+    debugPrint('Resolving Redirect: $this');
     dynamic b = routingTable[to];
     if (b == null || !(b is TRoute))
       throw ('Error: Invalide redirect for ${to}');
