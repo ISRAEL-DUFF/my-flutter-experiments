@@ -47,8 +47,8 @@ class DemoMultiListener extends StatelessWidget {
                         onPressed: () {
                           l1!.randomUpdate();
                         },
-                        child: Text('Update Multiple 1')),
-                    Text('Data 5: ${l1!.id}'),
+                        child: Text('Update 1 ')),
+                    Text(' Data 1: ${l1!.id}'),
                   ],
                 )),
                 Container(
@@ -58,8 +58,8 @@ class DemoMultiListener extends StatelessWidget {
                         onPressed: () {
                           d2.randomUpdate();
                         },
-                        child: Text('Update Multiple')),
-                    Text('Data 4: ${d2.id}'),
+                        child: Text('Update 2 ')),
+                    Text(' Data 4: ${d2.id}'),
                   ],
                 )),
                 Container(
@@ -86,7 +86,7 @@ class DemoMultiListener extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                            'Some Model ID: ${someModel.id}, OtherModel ID: ${someOtherModel.id} '),
+                            '    Some Model ID: ${someModel.id}, OtherModel ID: ${someOtherModel.id} '),
                         // Text('Account Number: ${}'),
                       ],
                     ),

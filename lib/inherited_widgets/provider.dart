@@ -195,10 +195,13 @@ class TDataNotifier extends ValueNotifier<int> {
 // MULTIPLE Listenable
 class TListenable<T extends ChangeNotifier> with TypeCheck {
   T? value;
+  bool valueIsFromProvider = false;
   TListenable({this.value}) {
     if (!isSubtype<T, ChangeNotifier>()) {
       throw ('Type $T must be a subtype of $ChangeNotifier');
     }
+
+    if (hasNoValue) valueIsFromProvider = true;
   }
 
   void getValueFromProvider(BuildContext context) {
@@ -218,6 +221,10 @@ class TListenable<T extends ChangeNotifier> with TypeCheck {
 
   bool get hasValue {
     return !hasNoValue;
+  }
+
+  bool get shouldGetValueFromProvider {
+    return hasNoValue || valueIsFromProvider;
   }
 
   addListener({void Function()? onUpdate, void Function()? onReset}) {
@@ -299,6 +306,8 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
 
   @override
   void didChangeDependencies() {
+    debugPrint('Dependency changed -: $initialized');
+
     // change dependencies here
     if (!initialized) {
       initListeners();
@@ -312,21 +321,29 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   @override
   void dispose() {
     super.dispose();
+    unsubscribeFromEvents();
+    debugPrint('Widget State Dispose called');
+  }
+
+  void unsubscribeFromEvents() {
     for (TListenable l in widget.values) {
       l.removeListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
     }
-    debugPrint('Widget State Dispose called');
+  }
+
+  void subscribeToEvents() {
+    for (TListenable l in widget.values) {
+      if (l.shouldGetValueFromProvider) {
+        l.getValueFromProvider(context);
+      }
+      l.addListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
+    }
   }
 
   initListeners([bool watchRebuild = false]) {
     debugPrint('Initializing Listeners;... Initialized = $initialized');
     // listen for individual changes in listeners
-    for (TListenable l in widget.values) {
-      if (l.hasNoValue) {
-        l.getValueFromProvider(context);
-      }
-      l.addListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
-    }
+    subscribeToEvents();
     initialized = true;
   }
 
@@ -354,6 +371,12 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
 
   listenForRebuild() {
     debugPrint('Listener for Rebuild called');
+
+    // unsubscribe from the old object
+    unsubscribeFromEvents();
+
+    // resubscribe again
+    subscribeToEvents();
     // initListeners();
   }
 }

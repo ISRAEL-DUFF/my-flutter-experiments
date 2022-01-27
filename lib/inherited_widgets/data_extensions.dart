@@ -58,7 +58,6 @@ extension GetItExtension on GetIt {
     Widget w = TProvider(create: crate<T>(GetIt.instance));
     // Widget w = Grael(create: crate<T>(GetIt.instance));
     tProviders.add(w);
-    // allProviders.add(w);
   }
 
   static registerAnewType<T extends Object>() {
