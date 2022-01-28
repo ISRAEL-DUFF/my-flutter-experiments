@@ -5,25 +5,17 @@ import './provider.dart';
 import './state_provider.dart';
 
 class TDependencyNotifier<T extends Object> {
-  void Function<R extends Object>(BuildContext) onRebuildDepencies;
+  void Function<R extends Object>(BuildContext) onReset;
   TDataNotifier dataNotifier;
-  TDependencyNotifier(
-      {required this.dataNotifier, required this.onRebuildDepencies});
+  TDependencyNotifier({required this.dataNotifier, required this.onReset});
 
-  rebuildDependencies(BuildContext context) {
-    onRebuildDepencies<T>(context);
+  reset(BuildContext context) {
+    onReset<T>(context);
   }
 }
 
-extension StateExtension<T> on TProviderState<T> {
-  // refresh<R extends Object>() {
-  //   context.tGetIt().resetLazySingleton(instance: data as R);
-  //   context.tGetIt().allReady().then((f) {
-  //     data = widget.create(context) as T;
-  //     context.tUpdateListeners();
-  //   });
-  // }
-}
+// extension on TProvider
+extension StateExtension<T> on TProviderState<T> {}
 
 Create<R> crate<R extends Object>(GetIt sl) {
   return (BuildContext context) {
@@ -65,8 +57,8 @@ extension GetItExtension on GetIt {
     if (dependencyNotifiers[T] == null) {
       dependencyNotifiers[T] = TDependencyNotifier(
           dataNotifier: TDataNotifier(),
-          onRebuildDepencies: <P extends Object>(context) {
-            context._rebuildDependencies<T>();
+          onReset: <P extends Object>(context) {
+            context.reset<T>();
           });
     }
   }
@@ -82,28 +74,21 @@ extension StateOnContext on BuildContext {
     return TProvider.fo<T>(this)!;
   }
 
-  void _rebuildDependencies<R extends Object>() {
-    // tWState<R>().data = tWState<R>().widget.create(this);
-    tWState<R>().rebuild();
-    tUpdateListeners<R>();
-  }
-
   reset<R extends Object>() {
-    tGetIt().resetLazySingleton<R>();
-    tGetIt().allReady().then((f) {
-      _rebuildDependencies<R>();
-    });
+    if (tGetIt().isRegistered<R>()) {
+      tGetIt().resetLazySingleton<R>();
+      tGetIt().allReady().then((f) {
+        tWState<R>().rebuild();
+        tUpdateListeners<R>();
+      });
+    }
   }
 
   resetAll() async {
-    // TODO: Implement this feature
-    // This feature should only reset (and not unregister) all lazySinglitons
-    await tGetIt().reset();
-    tGetIt().allReady().then((f) {
-      for (TDependencyNotifier d in GetItExtension.dependencyNotifiers.values) {
-        d.rebuildDependencies(this);
-      }
-    });
+    // This feature only reset (and not unregister) all lazySinglitons
+    for (TDependencyNotifier d in GetItExtension.dependencyNotifiers.values) {
+      d.reset(this);
+    }
   }
 
   GetIt tGetIt() {

@@ -84,37 +84,22 @@ class TProviderState<T> extends State<TProvider> {
   }
 
   @override
-  Widget build(BuildContext context) => TInheritedWidget(
-        child: widget.child,
-        data: data,
-        state: this,
-        buildValue: _currentBuildValue!,
-      );
+  Widget build(BuildContext context) =>
+      TInheritedWidget(child: widget.child, data: data, state: this);
 }
 
 class TInheritedWidget<T> extends InheritedWidget {
   final T? data;
   final TProviderState? state;
-  final int buildValue;
-  TInheritedWidget(
-      {Key? key,
-      this.state,
-      @required Widget? child,
-      this.data,
-      required this.buildValue})
-      : super(key: key, child: child!);
+  TInheritedWidget({
+    Key? key,
+    this.state,
+    @required Widget? child,
+    this.data,
+  }) : super(key: key, child: child!);
 
   @override
   bool updateShouldNotify(TInheritedWidget oldWidget) {
-    // if (buildValue == oldWidget.buildValue) {
-    //   debugPrint('Update should NOT Notify Descendants');
-    //   return false;
-    // } else {
-    //   debugPrint('Update IS Notifying inherited descendants ');
-    //   return true;
-    // }
-    debugPrint('BuildValues: ${oldWidget.buildValue}, $buildValue');
-
     if (data == oldWidget.data) {
       debugPrint('Update should NOT Notify Descendants');
       return false;
@@ -289,34 +274,28 @@ class TMultiListenableBuilder extends StatefulWidget {
       : super(key: key);
   @override
   TMultiListenableBuilderState createState() => TMultiListenableBuilderState();
-
-  T? find<T extends ChangeNotifier>() {
-    for (TListenable l in values) {
-      if (l.value is T) {
-        return l.value as T;
-      }
-    }
-  }
 }
 
 class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     with TypeCheck {
   bool initialized = false;
+  List<TListenable>? values;
+  int buildValue = Random().nextInt(500);
 
   @override
   void initState() {
     super.initState();
+    values = widget.values;
   }
 
   @override
   void didChangeDependencies() {
-    debugPrint('Dependency changed -: $initialized');
+    debugPrint('buildValue: $buildValue ... Dependency changed');
 
     // change dependencies here
     if (!initialized) {
       initListeners();
     }
-    debugPrint('Dependency changed: $initialized');
 
     // finally call super
     super.didChangeDependencies();
@@ -326,17 +305,19 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   void dispose() {
     super.dispose();
     unsubscribeFromEvents();
-    debugPrint('Widget State Dispose called');
+    debugPrint('buildValue: $buildValue ... Widget State Disposed');
   }
 
   void unsubscribeFromEvents() {
-    for (TListenable l in widget.values) {
+    debugPrint('buildValue: $buildValue ... Unsubscribing');
+    for (TListenable l in values!) {
       l.removeListener(onUpdate: listenForUpdate, onReset: listenForRebuild);
     }
   }
 
   void subscribeToEvents([resubscription = false]) {
-    for (TListenable l in widget.values) {
+    debugPrint('buildValue: $buildValue ... Subscribing');
+    for (TListenable l in values!) {
       if (l.shouldGetValueFromProvider) {
         l.getValueFromProvider(context);
       }
@@ -345,7 +326,6 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   }
 
   initListeners([bool watchRebuild = false]) {
-    debugPrint('Initializing Listeners;... Initialized = $initialized');
     // listen for individual changes in listeners
     subscribeToEvents();
     initialized = true;
@@ -357,24 +337,24 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   }
 
   Widget _buildTree({int i = 0}) {
-    if (i < widget.values.length - 1) {
+    if (i < values!.length - 1) {
       return Builder(builder: (context) {
         return _buildTree(i: i + 1);
       });
     } else {
       return Builder(builder: (context) {
-        return widget.builder(context, widget.find, widget.child);
+        return widget.builder(context, find, widget.child);
       });
     }
   }
 
   listenForUpdate() {
-    debugPrint('Listen for update called');
+    debugPrint('buildValue: $buildValue ... Updated');
     if (mounted) setState(() {});
   }
 
   listenForRebuild() {
-    debugPrint('Listener for Rebuild called');
+    debugPrint('buildValue: $buildValue ... Rebuilding');
 
     /// unsubscribe from the old object
     unsubscribeFromEvents();
@@ -382,5 +362,13 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     /// resubscribe by setting this to 'false'
     /// the resubscription will be taken care of in [didChangeDependencies()]
     initialized = false;
+  }
+
+  T? find<T extends ChangeNotifier>() {
+    for (TListenable l in values!) {
+      if (l.value is T) {
+        return l.value as T;
+      }
+    }
   }
 }
