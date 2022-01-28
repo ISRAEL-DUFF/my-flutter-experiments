@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:trouter/model.dart';
 import 'dart:math';
 import 'mixins.dart';
 import './data_extensions.dart';
@@ -228,6 +229,7 @@ class TListenable<T extends ChangeNotifier> with TypeCheck {
   }
 
   addListener({void Function()? onUpdate, void Function()? onReset}) {
+    debugPrint('Adding Listener for $T');
     if (hasValue) {
       if (onUpdate != null) {
         value!.addListener(onUpdate);
@@ -241,6 +243,8 @@ class TListenable<T extends ChangeNotifier> with TypeCheck {
   }
 
   removeListener({void Function()? onUpdate, void Function()? onReset}) {
+    debugPrint('Removing Listener for $T');
+
     if (hasValue) {
       if (onUpdate != null) {
         value!.removeListener(onUpdate);
@@ -331,7 +335,7 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
     }
   }
 
-  void subscribeToEvents() {
+  void subscribeToEvents([resubscription = false]) {
     for (TListenable l in widget.values) {
       if (l.shouldGetValueFromProvider) {
         l.getValueFromProvider(context);
@@ -372,11 +376,11 @@ class TMultiListenableBuilderState extends State<TMultiListenableBuilder>
   listenForRebuild() {
     debugPrint('Listener for Rebuild called');
 
-    // unsubscribe from the old object
+    /// unsubscribe from the old object
     unsubscribeFromEvents();
 
-    // resubscribe again
-    subscribeToEvents();
-    // initListeners();
+    /// resubscribe by setting this to 'false'
+    /// the resubscription will be taken care of in [didChangeDependencies()]
+    initialized = false;
   }
 }

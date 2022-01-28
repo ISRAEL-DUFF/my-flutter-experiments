@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
           /// here it is:
           TProvider(create: (context) => StateProvider.getIt()<MyData5>()),
 
-          //
+          // maybe you feel like doing this
           TProvider(
             create: (_) => SomeOtherModel(),
           )
